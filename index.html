@@ -143,10 +143,19 @@ canvas { width:100%; display:block }
   </div>
   <div class="banner">
     <div><div style="font-size:9px;color:var(--textDim);letter-spacing:.12em;text-transform:uppercase">Valor financiado</div><div class="banner-val" id="lbl-principal"></div></div>
-    <div class="sys-btns">
-      <span style="font-size:9px;color:var(--textDim);text-transform:uppercase;letter-spacing:.1em;margin-right:4px">Sistema:</span>
-      <button class="sys-btn" id="btn-sac"   onclick="setSys('SAC')">SAC</button>
-      <button class="sys-btn" id="btn-price" onclick="setSys('PRICE')">PRICE</button>
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;min-width:180px">
+      <div class="sys-btns">
+        <span style="font-size:9px;color:var(--textDim);text-transform:uppercase;letter-spacing:.1em;margin-right:4px">Sistema:</span>
+        <button class="sys-btn" id="btn-sac"   onclick="setSys('SAC')">SAC</button>
+        <button class="sys-btn" id="btn-price" onclick="setSys('PRICE')">PRICE</button>
+      </div>
+      <div style="width:100%">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <span style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textDim)">Renda mensal</span>
+          <span id="lbl-income" style="font-size:13px;font-weight:700;color:var(--success)"></span>
+        </div>
+        <input type="range" id="sl-income" min="5000" max="60000" step="500" value="25600" oninput="upd()" style="accent-color:var(--success)">
+      </div>
     </div>
   </div>
   <div class="grid4">
@@ -254,7 +263,7 @@ canvas { width:100%; display:block }
   <div class="grid3" style="margin-bottom:16px">
     <div class="panel stat-card"><div class="stat-label">Máx. financiado</div><div class="stat-value" id="rev-stat-financiado" style="color:var(--warning)"></div><div class="stat-sub" id="rev-stat-sys"></div></div>
     <div class="panel stat-card"><div class="stat-label">Máx. imóvel</div><div class="stat-value" id="rev-stat-imovel" style="color:var(--success)"></div><div class="stat-sub" id="rev-stat-entrada"></div></div>
-    <div class="panel stat-card"><div class="stat-label">% da renda</div><div class="stat-value" id="rev-stat-renda"></div><div class="stat-sub">renda R$25.6k</div></div>
+    <div class="panel stat-card"><div class="stat-label">% da renda</div><div class="stat-value" id="rev-stat-renda"></div><div class="stat-sub" id="rev-stat-renda-sub">renda R$25.6k</div></div>
   </div>
   <div class="panel compare-wrap"><div class="compare-hdr">Comparativo SAC vs PRICE</div><table><thead><tr><th style="text-align:left;padding:9px 14px"></th><th style="text-align:center;padding:9px 14px;color:var(--primary)">SAC</th><th style="text-align:center;padding:9px 14px;color:var(--secondary)">PRICE</th></tr></thead><tbody id="rev-tbl-compare"></tbody></table></div>
   <div class="note" style="font-size:10px">ℹ️ SAC: parcela = 1ª parcela (mais alta). PRICE: parcela fixa. Cálculo desconta MIP, DFI e tarifa.</div>
@@ -293,7 +302,7 @@ canvas { width:100%; display:block }
 </div><!-- /wrap -->
 <script>
 // ── Constants ─────────────────────────────────────────────────────────────────
-var INCOME          = 25600;
+var INCOME          = 25600; // agora apenas valor inicial — controlado pelo slider
 var OWNED_RESOURCES = 210000;
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -488,6 +497,8 @@ function upd() {
   var bonus = +el('sl-bonus').value, extra = +el('sl-extra').value;
   var tr = +el('sl-tr').value, mip = +el('sl-mip').value, dfi = +el('sl-dfi').value, tarifa = +el('sl-tarifa').value;
   var fgtsAnn = +el('sl-fgts').value;
+  var income  = +el('sl-income').value;
+  INCOME = income; // keep global in sync for updRev()
 
   el('sl-entrada').max = propVal; entrada = Math.min(entrada, propVal);
   var principal = Math.max(0, propVal - entrada);
@@ -500,6 +511,7 @@ function upd() {
   setText('lbl-extra', extra > 0 ? fmtK(extra) : 'R$0'); setText('lbl-tr', '+' + tr.toFixed(2) + '%');
   setText('lbl-mip', mip.toFixed(3) + '%'); setText('lbl-dfi', dfi.toFixed(3) + '%');
   setText('lbl-tarifa', 'R$' + tarifa); setText('lbl-fgts', fmtK(fgtsAnn));
+  setText('lbl-income', fmtK(income));
 
   var s    = simulate(principal, propVal, rate, months, SYS,    bonus, extra, tr, mip, dfi, tarifa, fgtsAnn, USE_FGTS);
   var base = simulate(principal, propVal, rate, months, SYS,    0, 0,         tr, mip, dfi, tarifa, 0,       false);
@@ -511,7 +523,7 @@ function upd() {
   var savedYears  = Math.max(0, baseYears - payoffYears);
   // FIX #1: total saved = difference in totalPaid (includes interest + costs), not just interest
   var savedTotal  = Math.max(0, base.totalPaid - s.totalPaid);
-  var rentPct     = (s.firstInstallment / INCOME) * 100;
+  var rentPct     = income > 0 ? (s.firstInstallment / income) * 100 : 0;
   var rentColor   = rentPct > 35 ? '#ef4444' : rentPct > 28 ? '#f59e0b' : 'var(--success)';
 
   setText('stat-parcela1', fmt(s.firstInstallment), rentColor); setText('stat-parcela1-sub', pct(rentPct) + ' da renda');
@@ -595,8 +607,11 @@ function updRev() {
   el('rev-stat-sys').textContent = REV_SYS;
   setText('rev-stat-imovel', fmtK(revRes.principal + revEntrada));
   el('rev-stat-entrada').textContent = 'entrada ' + fmtK(revEntrada);
-  var rentPct = (maxInst / INCOME) * 100;
+  var rentPct = income > 0 ? (maxInst / income) * 100 : 0;
   setText('rev-stat-renda', pct(rentPct), rentPct > 35 ? '#ef4444' : rentPct > 28 ? '#f59e0b' : 'var(--success)');
+  // update sub label dynamically
+  var rendaSub = el('rev-stat-renda-sub');
+  if (rendaSub) rendaSub.textContent = 'renda ' + fmtK(income);
   setHTML('rev-tbl-compare', compareRows([
     ['Máx. financiado', fmtK(revSACRes.principal),               fmtK(revPRXRes.principal)],
     ['Máx. imóvel',     fmtK(revSACRes.principal + revEntrada),  fmtK(revPRXRes.principal + revEntrada)],
