@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador · Financiamento Imobiliário</title>
+<style>
+/* ── CSS Variables ────────────────────────────────────────────────────── */
+:root {
+  --bg:       #080c10; --surface: #0d1117; --surf2:   #0b1626;
+  --border:   #1e2d3d; --border2: #1a3a5c;
+  --text:     #e2e8f0; --textStr: #f8fafc; --textMut: #94a3b8;
+  --textDim:  #64748b; --textVdim:#475569; --rowAlt:  #0f1923;
+  --primary:  #22d3ee; --secondary:#a78bfa;
+  --success:  #4ade80; --warning: #f59e0b; --danger:  #ef4444;
+  --orange:   #f97316; --fgts:    #fbbf24;
+  --thBg:     #080c10; --thFg:    #475569;
+}
+body.light {
+  --bg:       #f1f5f9; --surface: #ffffff; --surf2:   #eff6ff;
+  --border:   #e2e8f0; --border2: #bfdbfe;
+  --text:     #1e293b; --textStr: #0f172a; --textMut: #475569;
+  --textDim:  #64748b; --textVdim:#94a3b8; --rowAlt:  #f1f5f9;
+  --primary:  #0891b2; --secondary:#7c3aed;
+  --success:  #16a34a; --warning: #d97706; --danger:  #dc2626;
+  --orange:   #ea580c; --fgts:    #ca8a04;
+  --thBg:     #f8fafc; --thFg:    #94a3b8;
+}
+* { box-sizing:border-box; margin:0; padding:0 }
+body { font-family:'Courier New',monospace; min-height:100vh;
+       background:var(--bg); color:var(--text); transition:background .2s,color .2s }
+input[type=range] { width:100%; cursor:pointer; display:block; accent-color:var(--primary) }
+button { font-family:'Courier New',monospace; cursor:pointer }
+table  { width:100%; border-collapse:collapse }
+th { padding:7px 6px; text-align:right; font-size:10px; font-weight:500;
+     color:var(--thFg); border-bottom:1px solid var(--border); background:var(--thBg) }
+td { padding:7px 6px; text-align:right; font-size:10px; border-bottom:1px solid var(--rowAlt) }
+canvas { width:100%; display:block }
+@media print { .no-print { display:none !important } }
+.wrap  { max-width:900px; margin:0 auto; padding:22px 16px }
+.header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; gap:12px }
+.header h1 { font-size:22px; font-weight:800; letter-spacing:-.5px }
+.header-btns { display:flex; gap:6px }
+.grid2  { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px }
+.grid3  { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px }
+.grid4  { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px }
+.grid4s { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px }
+.panel { background:var(--surface); border:1px solid var(--border); border-radius:10px }
+.tabs { display:flex; gap:3px; background:var(--surface); border:1px solid var(--border);
+        border-radius:8px; padding:3px; margin-bottom:16px }
+.tab  { flex:1; padding:8px 6px; border:none; border-radius:6px;
+        font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+        background:transparent; color:var(--textDim); transition:all .15s }
+.tab.active { background:var(--primary); color:var(--bg); font-weight:700 }
+.card { padding:12px 14px }
+.card-label { font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--textDim); margin-bottom:3px }
+.card-value { font-size:17px; font-weight:700; margin-bottom:7px; color:var(--primary) }
+.stat-card  { padding:11px 10px; text-align:center; border-radius:10px }
+.stat-label { font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:var(--textDim); margin-bottom:4px }
+.stat-value { font-size:14px; font-weight:700; margin-bottom:2px; color:var(--primary) }
+.stat-sub   { font-size:9px; color:var(--textVdim) }
+.banner { background:var(--surf2); border:1px solid var(--border2); border-radius:8px;
+          padding:10px 16px; margin-bottom:10px; display:flex; justify-content:space-between;
+          align-items:center; flex-wrap:wrap; gap:8px }
+.banner-val { font-size:20px; font-weight:800; color:var(--warning) }
+.sys-btns { display:flex; gap:6px; align-items:center }
+.sys-btn  { padding:6px 18px; border-radius:7px; font-size:11px; font-weight:700;
+            border:1px solid var(--border); background:var(--surface); color:var(--textDim); transition:all .15s }
+.section-wrap   { border-radius:10px; margin-bottom:10px; overflow:hidden }
+.section-toggle { width:100%; background:transparent; border:none; padding:11px 14px; cursor:pointer;
+                  display:flex; justify-content:space-between; align-items:center; color:var(--text) }
+.section-body   { padding:0 14px 14px; border-top:1px solid var(--border) }
+.inst-wrap { border-radius:10px; overflow:hidden }
+.inst-hdr  { padding:9px 14px; font-size:9px; letter-spacing:.12em; text-transform:uppercase; border-bottom:1px solid var(--border) }
+.composition { border-radius:10px; padding:10px 14px; margin-bottom:14px;
+               display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px; font-size:10px }
+.milestone-wrap  { border-radius:12px; padding:14px 18px; margin-bottom:14px }
+.milestone-track { position:relative; height:20px; margin-bottom:14px }
+.milestone-line  { position:absolute; top:8px; left:0; right:0; height:3px; border-radius:2px; opacity:.4;
+                   background:linear-gradient(90deg,#60a5fa,#a78bfa,#f59e0b,#4ade80) }
+.milestone-dot   { position:absolute; top:2px; width:14px; height:14px; border-radius:50%;
+                   border:2px solid var(--bg); left:0; transition:left .3s }
+.milestone-grid  { display:grid; grid-template-columns:repeat(5,1fr); gap:4px }
+.milestone-item  { text-align:center }
+.milestone-lbl   { font-size:9px; font-weight:600; margin-bottom:2px }
+.milestone-yr    { font-size:11px; font-weight:700 }
+.chart-wrap { border-radius:12px; padding:14px 12px 8px; margin-bottom:14px }
+.chart-lbl  { font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--textDim); margin-bottom:10px }
+.legend      { display:flex; gap:16px; justify-content:center; margin-top:6px; flex-wrap:wrap }
+.legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--textMut) }
+.legend-line { width:10px; height:2px; border-radius:2px; display:inline-block }
+.compare-wrap { border-radius:12px; overflow:hidden; margin-bottom:14px }
+.compare-hdr  { padding:10px 16px; font-size:9px; letter-spacing:.12em; text-transform:uppercase;
+                color:var(--textDim); border-bottom:1px solid var(--border) }
+.acq-wrap { border-radius:12px; overflow:hidden; margin-bottom:12px }
+.acq-hdr  { padding:10px 16px; font-size:9px; letter-spacing:.12em; text-transform:uppercase;
+            color:var(--textDim); border-bottom:1px solid var(--border) }
+.acq-row  { display:flex; justify-content:space-between; padding:11px 16px; border-bottom:1px solid var(--rowAlt) }
+.res-card { border-radius:10px; padding:14px }
+.res-row  { display:flex; justify-content:space-between; font-size:11px; margin-bottom:7px }
+.note    { border-radius:8px; padding:11px 16px; margin-bottom:16px; font-size:11px; line-height:1.6;
+           background:var(--surf2); border:1px solid var(--border2); color:var(--textMut) }
+.hint    { margin-top:10px; font-size:10px; color:var(--textDim); line-height:1.5 }
+.warn-box { margin-top:8px; padding:7px 12px; border-radius:6px; font-size:10px; color:var(--warning);
+            background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.3) }
+.fgts-ev { margin-top:10px; padding:8px 12px; border-radius:6px; font-size:10px;
+           border:1px solid rgba(251,191,36,.2); color:var(--textMut) }
+.foot    { font-size:9px; color:var(--textDim); text-align:center; margin-top:12px }
+.icon-btn { border-radius:8px; padding:8px 14px; font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+            background:var(--surface); border:1px solid var(--border); color:var(--textMut) }
+.rev-params { font-size:10px; color:var(--textDim); text-align:center; margin-bottom:14px;
+              padding:8px; background:var(--surf2); border-radius:6px; border:1px solid var(--border) }
+.rev-params strong { color:var(--textMut) }
+</style>
+</head>
+<body class="dark">
+<div class="wrap">
+
+<!-- HEADER -->
+<div class="header no-print">
+  <div>
+    <div style="font-size:9px;color:var(--primary);letter-spacing:.16em;text-transform:uppercase;margin-bottom:4px">Simulador · Financiamento Imobiliário</div>
+    <h1>Amortização com Bônus + FGTS</h1>
+  </div>
+  <div class="header-btns">
+    <button class="icon-btn" onclick="toggleTheme()" id="btn-theme">☀️</button>
+    <button class="icon-btn" onclick="window.print()">🖨️ PDF</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs no-print">
+  <button class="tab active" onclick="switchTab('sim',this)">📊 Simulação</button>
+  <button class="tab" onclick="switchTab('rev',this)">🔄 Reverso</button>
+  <button class="tab" onclick="switchTab('acq',this)">🏠 Aquisição</button>
+</div>
+
+<!-- ═══ TAB SIMULAÇÃO ═══ -->
+<div id="tab-sim">
+  <div class="grid2">
+    <div class="panel card"><div class="card-label">Valor do imóvel</div><div class="card-value" id="lbl-propval"></div><input type="range" id="sl-propval" min="400000" max="1500000" step="10000" value="950000" oninput="upd()"></div>
+    <div class="panel card"><div class="card-label" id="lbl-entrada-pct">Entrada</div><div class="card-value" id="lbl-entrada" style="color:var(--secondary)"></div><input type="range" id="sl-entrada" min="0" max="950000" step="5000" value="210000" oninput="upd()"></div>
+  </div>
+  <div class="banner">
+    <div><div style="font-size:9px;color:var(--textDim);letter-spacing:.12em;text-transform:uppercase">Valor financiado</div><div class="banner-val" id="lbl-principal"></div></div>
+    <div class="sys-btns">
+      <span style="font-size:9px;color:var(--textDim);text-transform:uppercase;letter-spacing:.1em;margin-right:4px">Sistema:</span>
+      <button class="sys-btn" id="btn-sac"   onclick="setSys('SAC')">SAC</button>
+      <button class="sys-btn" id="btn-price" onclick="setSys('PRICE')">PRICE</button>
+    </div>
+  </div>
+  <div class="grid4">
+    <div class="panel card"><div class="card-label">Taxa anual</div><div class="card-value" id="lbl-rate"></div><input type="range" id="sl-rate" min="7" max="14" step="0.25" value="9.5" oninput="upd()"></div>
+    <div class="panel card"><div class="card-label">Prazo</div><div class="card-value" id="lbl-months"></div><input type="range" id="sl-months" min="120" max="360" step="12" value="360" oninput="upd()"></div>
+    <div class="panel card"><div class="card-label">Bônus líquido/ano</div><div class="card-value" id="lbl-bonus" style="color:var(--success)"></div><input type="range" id="sl-bonus" min="0" max="150000" step="5000" value="75000" oninput="upd()"></div>
+    <div class="panel card"><div class="card-label">Aporte extra/mês</div><div class="card-value" id="lbl-extra" style="color:var(--orange)"></div><input type="range" id="sl-extra" min="0" max="5000" step="100" value="0" oninput="upd()"></div>
+  </div>
+  <div class="panel section-wrap">
+    <button class="section-toggle" onclick="toggleSec('sec-custos','arrow-custos')">
+      <span style="font-size:10px;color:var(--orange);letter-spacing:.12em;text-transform:uppercase">💸 Custos do financiamento (TR + Seguros + Tarifa)</span>
+      <span id="arrow-custos" style="font-size:10px;color:var(--textDim)">▼</span>
+    </button>
+    <div id="sec-custos" style="display:none" class="section-body">
+      <div class="grid4" style="margin-top:12px">
+        <div class="panel card"><div class="card-label">TR adicional</div><div class="card-value" id="lbl-tr" style="color:var(--orange)"></div><input type="range" id="sl-tr" min="0" max="3" step="0.05" value="0" oninput="upd()"></div>
+        <div class="panel card"><div class="card-label">MIP/mês (% saldo)</div><div class="card-value" id="lbl-mip" style="color:var(--orange)"></div><input type="range" id="sl-mip" min="0" max="0.1" step="0.005" value="0.03" oninput="upd()"></div>
+        <div class="panel card"><div class="card-label">DFI/mês (% imóvel)</div><div class="card-value" id="lbl-dfi" style="color:var(--orange)"></div><input type="range" id="sl-dfi" min="0" max="0.05" step="0.001" value="0.005" oninput="upd()"></div>
+        <div class="panel card"><div class="card-label">Tarifa admin. (R$)</div><div class="card-value" id="lbl-tarifa" style="color:var(--orange)"></div><input type="range" id="sl-tarifa" min="0" max="50" step="1" value="25" oninput="upd()"></div>
+      </div>
+      <div class="hint">ℹ️ TR: somada à taxa anual · MIP: seguro vida/invalidez sobre saldo · DFI: seguro danos sobre valor imóvel · Tarifa: administração mensal</div>
+    </div>
+  </div>
+  <div class="panel section-wrap">
+    <button class="section-toggle" onclick="toggleSec('sec-fgts','arrow-fgts')">
+      <span style="font-size:10px;color:var(--fgts);letter-spacing:.12em;text-transform:uppercase">🏦 FGTS para amortizar (a cada 2 anos)</span>
+      <span id="arrow-fgts" style="font-size:10px;color:var(--textDim)">▼</span>
+    </button>
+    <div id="sec-fgts" style="display:none" class="section-body">
+      <div class="grid2" style="margin-top:12px">
+        <div class="panel card"><div class="card-label">FGTS acumulado/ano</div><div class="card-value" id="lbl-fgts" style="color:var(--fgts)"></div><input type="range" id="sl-fgts" min="0" max="30000" step="500" value="13000" oninput="upd()"></div>
+        <div class="panel card" style="display:flex;flex-direction:column;justify-content:space-between">
+          <div class="card-label">Usar FGTS a cada 24 meses</div>
+          <button id="btn-fgts-toggle" onclick="toggleFgts()" style="margin-top:8px;padding:8px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--textDim);font-size:11px;font-weight:700">DESATIVADO</button>
+        </div>
+      </div>
+      <div id="fgts-events" class="fgts-ev" style="display:none"></div>
+      <div class="hint">ℹ️ FGTS pode amortizar saldo devedor a cada 24 meses. ~R$13k/ano = 8% sobre R$14k salário.</div>
+    </div>
+  </div>
+  <div class="grid4s">
+    <div class="panel stat-card"><div class="stat-label">1ª parcela total</div><div class="stat-value" id="stat-parcela1"></div><div class="stat-sub" id="stat-parcela1-sub"></div></div>
+    <div class="panel stat-card"><div class="stat-label">Última parcela</div><div class="stat-value" id="stat-ultima"></div><div class="stat-sub" id="stat-ultima-sub"></div></div>
+    <div class="panel stat-card"><div class="stat-label">Quita em</div><div class="stat-value" id="stat-quita"></div><div class="stat-sub" id="stat-quita-sub"></div></div>
+    <!-- FIX #1: renamed label from "Juros economizados" to "Total economizado" -->
+    <div class="panel stat-card"><div class="stat-label">Total economizado</div><div class="stat-value" id="stat-economia"></div><div class="stat-sub" id="stat-economia-sub"></div></div>
+  </div>
+  <div class="panel composition">
+    <span style="color:var(--textDim);text-transform:uppercase;letter-spacing:.1em">Composição 1ª parcela:</span>
+    <span id="comp-base"   style="color:var(--textMut)"></span>
+    <span id="comp-custos" style="color:var(--orange)"></span>
+    <span id="comp-total"  style="font-weight:700;color:var(--textStr)"></span>
+  </div>
+  <div class="panel milestone-wrap">
+    <div style="font-size:9px;color:var(--textDim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:16px">Timeline de marcos</div>
+    <div class="milestone-track">
+      <div class="milestone-line"></div>
+      <div id="dot-compra"  class="milestone-dot" style="background:var(--textDim)"></div>
+      <div id="dot-25"      class="milestone-dot" style="background:#60a5fa"></div>
+      <div id="dot-50"      class="milestone-dot" style="background:var(--secondary)"></div>
+      <div id="dot-75"      class="milestone-dot" style="background:var(--warning)"></div>
+      <div id="dot-quitado" class="milestone-dot" style="background:var(--success)"></div>
+    </div>
+    <div class="milestone-grid">
+      <div class="milestone-item"><div class="milestone-lbl" style="color:var(--textDim)">Compra</div><div class="milestone-yr" id="ms-compra">Ano 0</div></div>
+      <div class="milestone-item"><div class="milestone-lbl" style="color:#60a5fa">25% pago</div><div class="milestone-yr" id="ms-25">—</div></div>
+      <div class="milestone-item"><div class="milestone-lbl" style="color:var(--secondary)">50% pago</div><div class="milestone-yr" id="ms-50">—</div></div>
+      <div class="milestone-item"><div class="milestone-lbl" style="color:var(--warning)">75% pago</div><div class="milestone-yr" id="ms-75">—</div></div>
+      <div class="milestone-item"><div class="milestone-lbl" style="color:var(--success)">✓ Quitado</div><div class="milestone-yr" id="ms-quitado">—</div></div>
+    </div>
+  </div>
+  <div class="grid2" style="margin-bottom:14px">
+    <div class="panel inst-wrap"><div class="inst-hdr" style="color:var(--primary)">▲ Primeiras 3 parcelas</div><table><thead><tr><th>Mês</th><th>Amort.</th><th>Juros</th><th>Custos</th><th>Total</th><th>Saldo</th></tr></thead><tbody id="tbl-primeiras"></tbody></table></div>
+    <div class="panel inst-wrap"><div class="inst-hdr" style="color:var(--secondary)">▼ Últimas 3 parcelas</div><table><thead><tr><th>Mês</th><th>Amort.</th><th>Juros</th><th>Custos</th><th>Total</th><th>Saldo</th></tr></thead><tbody id="tbl-ultimas"></tbody></table></div>
+  </div>
+  <div class="panel chart-wrap">
+    <div class="chart-lbl">Saldo devedor ao longo do tempo</div>
+    <canvas id="chart-canvas" height="220"></canvas>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-line" style="background:#ef4444"></span>Sem extras</div>
+      <div class="legend-item"><span class="legend-line" style="background:var(--primary)"></span>Com extras</div>
+      <div id="legend-fgts" class="legend-item" style="display:none"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--fgts)"></span>FGTS</div>
+    </div>
+  </div>
+  <div class="panel compare-wrap">
+    <div class="compare-hdr">Comparativo SAC vs PRICE</div>
+    <table><thead><tr><th style="text-align:left;padding:9px 14px"></th><th style="text-align:center;padding:9px 14px;color:var(--primary)">SAC</th><th style="text-align:center;padding:9px 14px;color:var(--secondary)">PRICE</th></tr></thead><tbody id="tbl-compare"></tbody></table>
+  </div>
+  <div class="foot">SAC/PRICE · Bônus mês 12/ano · FGTS mês 24/ano · TR somada à taxa · MIP/DFI/Tarifa incluídos</div>
+</div>
+
+<!-- ═══ TAB REVERSO ═══ -->
+<div id="tab-rev" style="display:none">
+  <div class="note">💡 <strong style="color:#60a5fa">Modo reverso:</strong> informe a parcela máxima e descubra o valor máximo de imóvel (já descontando MIP/DFI/Tarifa).</div>
+  <div class="rev-params" id="rev-params-info"></div>
+  <div class="grid2">
+    <div class="panel card"><div class="card-label">Parcela máxima (total)</div><div class="card-value" id="rev-lbl-parcela"></div><input type="range" id="rev-sl-parcela" min="1000" max="15000" step="100" value="7500" oninput="updRev()"></div>
+    <div class="panel card"><div class="card-label">Entrada disponível</div><div class="card-value" id="rev-lbl-entrada" style="color:var(--secondary)"></div><input type="range" id="rev-sl-entrada" min="0" max="600000" step="5000" value="210000" oninput="updRev()"></div>
+  </div>
+  <div id="rev-warn" class="warn-box" style="display:none;margin-bottom:14px"></div>
+  <div class="sys-btns" style="justify-content:center;margin-bottom:16px">
+    <button class="sys-btn" id="rev-btn-sac"   onclick="setRevSys('SAC')">SAC</button>
+    <button class="sys-btn" id="rev-btn-price" onclick="setRevSys('PRICE')">PRICE</button>
+  </div>
+  <div class="grid3" style="margin-bottom:16px">
+    <div class="panel stat-card"><div class="stat-label">Máx. financiado</div><div class="stat-value" id="rev-stat-financiado" style="color:var(--warning)"></div><div class="stat-sub" id="rev-stat-sys"></div></div>
+    <div class="panel stat-card"><div class="stat-label">Máx. imóvel</div><div class="stat-value" id="rev-stat-imovel" style="color:var(--success)"></div><div class="stat-sub" id="rev-stat-entrada"></div></div>
+    <div class="panel stat-card"><div class="stat-label">% da renda</div><div class="stat-value" id="rev-stat-renda"></div><div class="stat-sub">renda R$25.6k</div></div>
+  </div>
+  <div class="panel compare-wrap"><div class="compare-hdr">Comparativo SAC vs PRICE</div><table><thead><tr><th style="text-align:left;padding:9px 14px"></th><th style="text-align:center;padding:9px 14px;color:var(--primary)">SAC</th><th style="text-align:center;padding:9px 14px;color:var(--secondary)">PRICE</th></tr></thead><tbody id="rev-tbl-compare"></tbody></table></div>
+  <div class="note" style="font-size:10px">ℹ️ SAC: parcela = 1ª parcela (mais alta). PRICE: parcela fixa. Cálculo desconta MIP, DFI e tarifa.</div>
+</div>
+
+<!-- ═══ TAB AQUISIÇÃO ═══ -->
+<!-- FIX #6: acq-sl-propval is a fully independent slider — does not affect sim tab -->
+<div id="tab-acq" style="display:none">
+  <div class="note">🏠 <strong style="color:#60a5fa">Custo real:</strong> tudo que precisa ter em caixa no dia da compra.</div>
+  <div class="grid2">
+    <div class="panel card"><div class="card-label">Valor do imóvel</div><div class="card-value" id="acq-lbl-propval"></div><input type="range" id="acq-sl-propval" min="400000" max="1500000" step="10000" value="950000" oninput="updAcq()"></div>
+    <div class="panel card"><div class="card-label" id="acq-lbl-itbi-pct">ITBI</div><div class="card-value" id="acq-lbl-itbi" style="color:var(--orange)"></div><input type="range" id="acq-sl-itbi" min="0.5" max="4" step="0.1" value="2.0" oninput="updAcq()"></div>
+  </div>
+  <div class="grid2">
+    <div class="panel card"><div class="card-label" id="acq-lbl-cart-pct">Cartório+Reg</div><div class="card-value" id="acq-lbl-cart" style="color:var(--orange)"></div><input type="range" id="acq-sl-cart" min="0.5" max="3" step="0.1" value="1.0" oninput="updAcq()"></div>
+    <div class="panel card"><div class="card-label">Reforma</div><div class="card-value" id="acq-lbl-reforma" style="color:var(--warning)"></div><input type="range" id="acq-sl-reforma" min="0" max="200000" step="5000" value="0" oninput="updAcq()"></div>
+  </div>
+  <div class="grid2" style="margin-bottom:16px">
+    <div class="panel card"><div class="card-label">Mobília / decoração</div><div class="card-value" id="acq-lbl-mobilia" style="color:var(--warning)"></div><input type="range" id="acq-sl-mobilia" min="0" max="150000" step="5000" value="0" oninput="updAcq()"></div>
+  </div>
+  <div class="panel acq-wrap" id="acq-detail"></div>
+  <div class="grid2">
+    <div class="panel res-card">
+      <div style="font-size:9px;color:var(--textDim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">Recursos disponíveis</div>
+      <div class="res-row"><span>FGTS</span><span>R$60.000</span></div>
+      <div class="res-row"><span>Consórcio (mãe)</span><span>R$100.000</span></div>
+      <div class="res-row"><span>Empréstimo sogra</span><span>R$50.000</span></div>
+      <div style="padding-top:8px;margin-top:4px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:12px;color:var(--success);font-weight:700">
+        <span>Total entrada</span><span>R$210.000</span>
+      </div>
+    </div>
+    <div class="panel res-card" id="acq-summary"></div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+<script>
+// ── Constants ─────────────────────────────────────────────────────────────────
+var INCOME          = 25600;
+var OWNED_RESOURCES = 210000;
+
+// ── State ─────────────────────────────────────────────────────────────────────
+var SYS = 'SAC', REV_SYS = 'SAC', USE_FGTS = false, IS_DARK = true;
+
+// ── Formatters ────────────────────────────────────────────────────────────────
+function fmt(v)  { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0}); }
+// FIX #5: return "R$0" for zero, not "R$0k"
+function fmtK(v) { return v === 0 ? 'R$0' : 'R$' + Math.round(v / 1000) + 'k'; }
+function pct(v)  { return v.toFixed(1) + '%'; }
+
+// ── DOM helpers ───────────────────────────────────────────────────────────────
+function el(id)           { return document.getElementById(id); }
+function setText(id, v, c){ var e = el(id); if (!e) return; e.textContent = v; if (c) e.style.color = c; }
+function setHTML(id, html) { var e = el(id); if (e) e.innerHTML = html; }
+
+// ── Simulation engine ─────────────────────────────────────────────────────────
+// FIX #4: field name aligned to "yearlyData" (matches JSX)
+function simulate(principal, propVal, rate, months, system, bonus, extra, tr, mip, dfi, tarifa, fgtsAnnual, useFgts) {
+  var empty = {
+    yearlyData:[], first3:[], last3:[], payoffMonth:months,
+    totalInterest:0, totalPaid:0, totalCosts:0,
+    milestones:{75:null, 50:null, 25:null, 0:null},
+    firstInstallment:0, firstBase:0, firstCosts:0, lastInstallment:0, fgtsEvents:[]
+  };
+  if (principal <= 0) return empty;
+
+  var r            = (rate + tr) / 12 / 100;
+  var pricePayment = system === 'PRICE' ? (principal * r) / (1 - Math.pow(1 + r, -months)) : 0;
+  var sacAmort     = principal / months;
+  var dfiMonthly   = propVal * dfi / 100;
+
+  var balance = principal, totalInterest = 0, totalPaid = 0, totalCosts = 0, payoffMonth = null;
+  var allMonths = [], yearlyData = [], fgtsEvents = [];
+  var ms = {75:null, 50:null, 25:null, 0:null};
+
+  for (var m = 1; m <= months; m++) {
+    if (balance <= 0) break;
+    var interest = balance * r;
+    var amort, baseInst;
+    if (system === 'SAC') { amort = Math.min(sacAmort, balance); baseInst = amort + interest; }
+    else { baseInst = Math.min(pricePayment, balance + interest); amort = Math.max(0, baseInst - interest); }
+
+    var costs       = (balance * mip / 100) + dfiMonthly + tarifa;
+    var installment = baseInst + costs;
+
+    totalInterest += interest; totalCosts += costs; totalPaid += installment;
+    balance = Math.max(0, balance - amort);
+
+    // 1. monthly extra
+    if (extra > 0 && balance > 0) { var exExtra = Math.min(extra, balance); balance -= exExtra; totalPaid += exExtra; }
+
+    allMonths.push({month:m, amort:amort, interest:interest, costs:costs, baseInst:baseInst, installment:installment, balance:Math.max(0, balance)});
+
+    // 2. annual bonus (before FGTS so FGTS sees post-bonus balance)
+    if (m % 12 === 0 && balance > 0 && bonus > 0) {
+      var exBonus = Math.min(bonus, balance); balance -= exBonus; totalPaid += exBonus;
+      allMonths[allMonths.length - 1].balance = Math.max(0, balance);
+    }
+
+    // 3. FGTS every 24 months
+    if (useFgts && m % 24 === 0 && balance > 0 && fgtsAnnual > 0) {
+      var exFgts = Math.min(fgtsAnnual * 2, balance); balance -= exFgts; totalPaid += exFgts;
+      allMonths[allMonths.length - 1].balance = Math.max(0, balance);
+      fgtsEvents.push({year: Math.ceil(m / 12), amount: exFgts});
+    }
+
+    if (balance <= 0 && payoffMonth === null) payoffMonth = m;
+
+    var rem = (balance / principal) * 100;
+    if (!ms[75] && rem <= 75) ms[75] = Math.ceil(m / 12);
+    if (!ms[50] && rem <= 50) ms[50] = Math.ceil(m / 12);
+    if (!ms[25] && rem <= 25) ms[25] = Math.ceil(m / 12);
+    if (!ms[0]  && balance <= 0) ms[0] = Math.ceil(m / 12);
+
+    if (m % 12 === 0 || m === 1 || balance === 0)
+      yearlyData.push({year: Math.ceil(m / 12), balance: Math.max(0, balance)});
+  }
+
+  if (payoffMonth === null) payoffMonth = months;
+  if (!ms[0]) ms[0] = Math.ceil(payoffMonth / 12);
+
+  var valid = allMonths.filter(function(x) { return x.month <= payoffMonth; });
+  return {
+    yearlyData: yearlyData, first3: allMonths.slice(0, 3), last3: valid.slice(-3),
+    payoffMonth: payoffMonth, totalInterest: totalInterest, totalCosts: totalCosts, totalPaid: totalPaid,
+    milestones: ms, fgtsEvents: fgtsEvents,
+    firstInstallment: allMonths[0] ? allMonths[0].installment : 0,
+    firstBase:        allMonths[0] ? allMonths[0].baseInst    : 0,
+    firstCosts:       allMonths[0] ? allMonths[0].costs       : 0,
+    lastInstallment:  valid.length  ? valid[valid.length - 1].installment : 0,
+  };
+}
+
+// ── Reverse calculator ────────────────────────────────────────────────────────
+function reverseCalc(maxInst, rate, months, system, propVal, mip, dfi, tarifa) {
+  var r = rate / 12 / 100, dfiFixed = propVal * dfi / 100, net = maxInst - dfiFixed - tarifa;
+  if (net <= 0) return {principal: 0, netOk: false};
+  if (system === 'SAC') return {principal: Math.max(0, net / (1 / months + r + mip / 100)), netOk: true};
+  return {principal: Math.max(0, net / (r / (1 - Math.pow(1 + r, -months)) + mip / 100)), netOk: true};
+}
+
+// ── Canvas chart ──────────────────────────────────────────────────────────────
+function drawChart(chartData, payoffYear, fgtsEvents, useFgts) {
+  var canvas = el('chart-canvas');
+  if (!canvas) return;
+  var dpr = window.devicePixelRatio || 1;
+  var W = canvas.parentElement.offsetWidth - 24, H = 220;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  var pad = {top:10, right:10, bottom:30, left:50};
+  var pw = W - pad.left - pad.right, ph = H - pad.top - pad.bottom;
+  var n = chartData.length;
+  if (n < 2) return;
+  var maxVal = 0;
+  for (var i = 0; i < n; i++) maxVal = Math.max(maxVal, chartData[i].withExtras, chartData[i].noExtras);
+  if (maxVal === 0) maxVal = 1;
+  function xScale(idx) { return pad.left + (idx / (n - 1)) * pw; }
+  function yScale(v)   { return pad.top  + ph - (v / maxVal) * ph; }
+
+  ctx.strokeStyle = IS_DARK ? '#1e2d3d' : '#e2e8f0'; ctx.lineWidth = 1;
+  for (var j = 0; j <= 4; j++) {
+    var gy = pad.top + (j / 4) * ph;
+    ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(pad.left + pw, gy); ctx.stroke();
+    ctx.fillStyle = IS_DARK ? '#64748b' : '#94a3b8'; ctx.font = '10px Courier New'; ctx.textAlign = 'right';
+    ctx.fillText(fmtK(maxVal * (1 - j / 4)), pad.left - 4, gy + 4);
+  }
+  var xStep = Math.ceil(n / 6);
+  ctx.fillStyle = IS_DARK ? '#64748b' : '#94a3b8'; ctx.textAlign = 'center';
+  for (var xi = 0; xi < n; xi += xStep) ctx.fillText((xi + 1) + 'a', xScale(xi), H - pad.bottom + 16);
+
+  // FIX #2: drawArea uses separate loop vars (ai1/ai2) to avoid var redeclaration
+  function drawArea(key, strokeColor, fillColor) {
+    ctx.beginPath(); ctx.moveTo(xScale(0), yScale(chartData[0][key]));
+    for (var ai1 = 1; ai1 < n; ai1++) ctx.lineTo(xScale(ai1), yScale(chartData[ai1][key]));
+    ctx.lineTo(xScale(n - 1), pad.top + ph); ctx.lineTo(xScale(0), pad.top + ph);
+    ctx.closePath(); ctx.fillStyle = fillColor; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(xScale(0), yScale(chartData[0][key]));
+    for (var ai2 = 1; ai2 < n; ai2++) ctx.lineTo(xScale(ai2), yScale(chartData[ai2][key]));
+    ctx.strokeStyle = strokeColor; ctx.lineWidth = key === 'withExtras' ? 2 : 1.5; ctx.stroke();
+  }
+
+  drawArea('noExtras',   '#ef4444', 'rgba(239,68,68,0.15)');
+  drawArea('withExtras', IS_DARK ? '#22d3ee' : '#0891b2', IS_DARK ? 'rgba(34,211,238,0.15)' : 'rgba(8,145,178,0.15)');
+
+  if (payoffYear < n) {
+    var px = xScale(payoffYear - 1);
+    ctx.setLineDash([4, 2]); ctx.strokeStyle = IS_DARK ? '#22d3ee' : '#0891b2'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(px, pad.top); ctx.lineTo(px, pad.top + ph); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle = IS_DARK ? '#22d3ee' : '#0891b2';
+    ctx.font = '9px Courier New'; ctx.textAlign = 'right';
+    ctx.fillText('✓ ' + payoffYear + 'a', px - 3, pad.top + 12);
+  }
+  if (useFgts) {
+    for (var fi = 0; fi < fgtsEvents.length; fi++) {
+      var ev = fgtsEvents[fi], di = ev.year - 1;
+      if (di < 0 || di >= n) continue;
+      ctx.beginPath(); ctx.arc(xScale(di), yScale(chartData[di].withExtras), 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#fbbf24'; ctx.fill();
+      ctx.strokeStyle = IS_DARK ? '#080c10' : '#f1f5f9'; ctx.lineWidth = 2; ctx.stroke();
+    }
+  }
+}
+
+// ── Row builders ──────────────────────────────────────────────────────────────
+function installmentRows(rows) {
+  var mutC = IS_DARK ? '#94a3b8' : '#475569', strC = IS_DARK ? '#f8fafc' : '#0f172a', priC = IS_DARK ? '#22d3ee' : '#0891b2';
+  return rows.map(function(r) {
+    return '<tr><td style="color:#64748b">' + r.month + '</td><td style="color:' + mutC + '">' + fmt(r.amort) + '</td><td style="color:#ef4444">' + fmt(r.interest) + '</td><td style="color:#f97316">' + fmt(r.costs) + '</td><td style="color:' + strC + ';font-weight:600">' + fmt(r.installment) + '</td><td style="color:' + priC + '">' + fmtK(r.balance) + '</td></tr>';
+  }).join('');
+}
+function compareRows(rows) {
+  var c1 = IS_DARK ? '#22d3ee' : '#0891b2', c2 = IS_DARK ? '#a78bfa' : '#7c3aed';
+  return rows.map(function(r) {
+    return '<tr><td style="text-align:left;padding:9px 14px;color:#64748b;font-size:10px">' + r[0] + '</td><td style="text-align:center;padding:9px 14px;color:' + c1 + ';font-weight:500">' + r[1] + '</td><td style="text-align:center;padding:9px 14px;color:' + c2 + ';font-weight:500">' + r[2] + '</td></tr>';
+  }).join('');
+}
+
+// ── System button styling ─────────────────────────────────────────────────────
+function styleSysBtn(sacId, priceId, active) {
+  var pri = IS_DARK?'#22d3ee':'#0891b2', sec = IS_DARK?'#a78bfa':'#7c3aed', bg = IS_DARK?'#0d1117':'#fff', txt = IS_DARK?'#080c10':'#fff';
+  el(sacId).style.background   = active==='SAC'   ? pri : bg; el(sacId).style.color   = active==='SAC'   ? txt : '#64748b';
+  el(priceId).style.background = active==='PRICE' ? sec : bg; el(priceId).style.color = active==='PRICE' ? txt : '#64748b';
+}
+
+// ── Main update ───────────────────────────────────────────────────────────────
+function upd() {
+  var propVal = +el('sl-propval').value, entrada = +el('sl-entrada').value;
+  var rate = +el('sl-rate').value, months = +el('sl-months').value;
+  var bonus = +el('sl-bonus').value, extra = +el('sl-extra').value;
+  var tr = +el('sl-tr').value, mip = +el('sl-mip').value, dfi = +el('sl-dfi').value, tarifa = +el('sl-tarifa').value;
+  var fgtsAnn = +el('sl-fgts').value;
+
+  el('sl-entrada').max = propVal; entrada = Math.min(entrada, propVal);
+  var principal = Math.max(0, propVal - entrada);
+  var entradaPct = propVal > 0 ? (entrada / propVal) * 100 : 0;
+
+  setText('lbl-propval', fmtK(propVal)); setText('lbl-entrada', fmtK(entrada));
+  el('lbl-entrada-pct').textContent = 'Entrada — ' + pct(entradaPct);
+  setText('lbl-principal', fmt(principal)); setText('lbl-rate', rate.toFixed(2) + '%');
+  setText('lbl-months', (months / 12) + ' anos'); setText('lbl-bonus', bonus > 0 ? fmtK(bonus) : 'R$0');
+  setText('lbl-extra', extra > 0 ? fmtK(extra) : 'R$0'); setText('lbl-tr', '+' + tr.toFixed(2) + '%');
+  setText('lbl-mip', mip.toFixed(3) + '%'); setText('lbl-dfi', dfi.toFixed(3) + '%');
+  setText('lbl-tarifa', 'R$' + tarifa); setText('lbl-fgts', fmtK(fgtsAnn));
+
+  var s    = simulate(principal, propVal, rate, months, SYS,    bonus, extra, tr, mip, dfi, tarifa, fgtsAnn, USE_FGTS);
+  var base = simulate(principal, propVal, rate, months, SYS,    0, 0,         tr, mip, dfi, tarifa, 0,       false);
+  var sSAC = simulate(principal, propVal, rate, months, 'SAC',  bonus, extra, tr, mip, dfi, tarifa, fgtsAnn, USE_FGTS);
+  var sPRC = simulate(principal, propVal, rate, months, 'PRICE',bonus, extra, tr, mip, dfi, tarifa, fgtsAnn, USE_FGTS);
+
+  var payoffYears = Math.ceil(s.payoffMonth / 12);
+  var baseYears   = Math.ceil(base.payoffMonth / 12);
+  var savedYears  = Math.max(0, baseYears - payoffYears);
+  // FIX #1: total saved = difference in totalPaid (includes interest + costs), not just interest
+  var savedTotal  = Math.max(0, base.totalPaid - s.totalPaid);
+  var rentPct     = (s.firstInstallment / INCOME) * 100;
+  var rentColor   = rentPct > 35 ? '#ef4444' : rentPct > 28 ? '#f59e0b' : 'var(--success)';
+
+  setText('stat-parcela1', fmt(s.firstInstallment), rentColor); setText('stat-parcela1-sub', pct(rentPct) + ' da renda');
+  setText('stat-ultima', fmt(s.lastInstallment), 'var(--primary)');
+  el('stat-ultima-sub').textContent  = SYS === 'SAC' ? 'decrescente' : 'fixa';
+  setText('stat-quita', payoffYears + ' anos', savedYears > 0 ? 'var(--primary)' : 'var(--textDim)');
+  el('stat-quita-sub').textContent   = savedYears > 0 ? savedYears + 'a antes do prazo' : 'sem adiantamento';
+  setText('stat-economia', savedYears > 0 ? fmtK(savedTotal) : 'R$0', savedYears > 0 ? 'var(--success)' : 'var(--textDim)');
+  el('stat-economia-sub').textContent = savedYears > 0 ? savedYears + ' anos a menos' : 'adicione bônus/extras';
+
+  setText('comp-base',   'Base ' + fmt(s.firstBase));
+  setText('comp-custos', '+ Custos ' + fmt(s.firstCosts));
+  setText('comp-total',  '= ' + fmt(s.firstInstallment));
+
+  // milestones — FIX #8: guard null years, transparent dot when not yet reached
+  var ms = s.milestones, payYr = Math.ceil(s.payoffMonth / 12);
+  var dotIds = ['dot-compra','dot-25','dot-50','dot-75','dot-quitado'];
+  var lblIds = ['ms-compra','ms-25','ms-50','ms-75','ms-quitado'];
+  var msYrs  = [0, ms[75], ms[50], ms[25], ms[0]];
+  for (var mi = 0; mi < 5; mi++) {
+    var yr = msYrs[mi];
+    setText(lblIds[mi], yr === 0 ? 'Ano 0' : yr ? 'Ano ' + yr : '—');
+    var dot = el(dotIds[mi]);
+    if (dot && payYr > 0) {
+      var safeYr = yr != null ? yr : 0;
+      dot.style.left = 'calc(' + Math.min((safeYr / payYr) * 100, 98) + '% - 7px)';
+      // FIX #8: hide dot visually when milestone not yet reached
+      dot.style.opacity = yr != null ? '1' : '0';
+    }
+  }
+
+  setHTML('tbl-primeiras', installmentRows(s.first3));
+  setHTML('tbl-ultimas',   installmentRows(s.last3));
+
+  if (USE_FGTS && s.fgtsEvents.length > 0) {
+    el('fgts-events').style.display = 'block';
+    el('fgts-events').textContent = 'FGTS aplicado em: ' + s.fgtsEvents.map(function(e) { return 'Ano ' + e.year + ' (' + fmtK(e.amount) + ')'; }).join(' · ');
+  } else { el('fgts-events').style.display = 'none'; }
+  el('legend-fgts').style.display = USE_FGTS ? 'flex' : 'none';
+
+  var totalYears = Math.ceil(months / 12), chartData = [];
+  for (var cy = 1; cy <= totalYears; cy++) {
+    var sRow    = s.yearlyData.find(function(d)    { return d.year === cy; }) || {balance:0};  // FIX #4: yearlyData
+    var baseRow = base.yearlyData.find(function(d) { return d.year === cy; }) || {balance:0};  // FIX #4
+    chartData.push({year:cy, withExtras:sRow.balance, noExtras:baseRow.balance});
+  }
+  drawChart(chartData, payoffYears, s.fgtsEvents, USE_FGTS);
+
+  setHTML('tbl-compare', compareRows([
+    ['1ª parcela total',    fmt(sSAC.firstInstallment),               fmt(sPRC.firstInstallment)],
+    ['Última parcela',      fmt(sSAC.lastInstallment),                fmt(sPRC.lastInstallment)],
+    ['Quita em',            Math.ceil(sSAC.payoffMonth/12)+' anos',  Math.ceil(sPRC.payoffMonth/12)+' anos'],
+    ['Total juros',         fmtK(sSAC.totalInterest),                fmtK(sPRC.totalInterest)],
+    ['Total custos extras', fmtK(sSAC.totalCosts),                   fmtK(sPRC.totalCosts)],
+    ['Total pago',          fmtK(sSAC.totalPaid),                    fmtK(sPRC.totalPaid)],
+  ]));
+  updRev();
+}
+
+// ── Reverse update ────────────────────────────────────────────────────────────
+function updRev() {
+  var maxInst = +el('rev-sl-parcela').value, revEntrada = +el('rev-sl-entrada').value;
+  var rate = +el('sl-rate').value, months = +el('sl-months').value;
+  var tr = +el('sl-tr').value, mip = +el('sl-mip').value, dfi = +el('sl-dfi').value, tarifa = +el('sl-tarifa').value;
+  var propVal = +el('sl-propval').value;
+
+  setText('rev-lbl-parcela', fmt(maxInst)); setText('rev-lbl-entrada', fmtK(revEntrada));
+
+  var rInfo = el('rev-params-info');
+  if (rInfo) rInfo.innerHTML = 'Usando da aba Simulação: <strong>' + rate.toFixed(2) + '%' + (tr > 0 ? ' + TR ' + tr.toFixed(2) + '%' : '') + ' a.a.</strong> · <strong>' + (months/12) + ' anos</strong>';
+
+  var revRes    = reverseCalc(maxInst, rate + tr, months, REV_SYS, propVal, mip, dfi, tarifa);
+  var revSACRes = reverseCalc(maxInst, rate + tr, months, 'SAC',   propVal, mip, dfi, tarifa);
+  var revPRXRes = reverseCalc(maxInst, rate + tr, months, 'PRICE', propVal, mip, dfi, tarifa);
+
+  var warnEl = el('rev-warn');
+  warnEl.style.display = revRes.netOk ? 'none' : 'block';
+  if (!revRes.netOk) warnEl.textContent = '⚠️ Parcela informada não cobre DFI + Tarifa (custos fixos). Aumente a parcela máxima.';
+
+  setText('rev-stat-financiado', fmtK(revRes.principal));
+  el('rev-stat-sys').textContent = REV_SYS;
+  setText('rev-stat-imovel', fmtK(revRes.principal + revEntrada));
+  el('rev-stat-entrada').textContent = 'entrada ' + fmtK(revEntrada);
+  var rentPct = (maxInst / INCOME) * 100;
+  setText('rev-stat-renda', pct(rentPct), rentPct > 35 ? '#ef4444' : rentPct > 28 ? '#f59e0b' : 'var(--success)');
+  setHTML('rev-tbl-compare', compareRows([
+    ['Máx. financiado', fmtK(revSACRes.principal),               fmtK(revPRXRes.principal)],
+    ['Máx. imóvel',     fmtK(revSACRes.principal + revEntrada),  fmtK(revPRXRes.principal + revEntrada)],
+  ]));
+  styleSysBtn('rev-btn-sac', 'rev-btn-price', REV_SYS);
+}
+
+// ── Acquisition update ────────────────────────────────────────────────────────
+// FIX #6: reads from independent acq-sl-propval slider, not the sim tab slider
+function updAcq() {
+  var propVal = +el('acq-sl-propval').value;
+  var itbi = +el('acq-sl-itbi').value, cart = +el('acq-sl-cart').value;
+  var reforma = +el('acq-sl-reforma').value, mobilia = +el('acq-sl-mobilia').value;
+
+  var acqITBI = propVal * itbi / 100, acqCart = propVal * cart / 100;
+  var acqTotal = propVal + acqITBI + acqCart + reforma + mobilia;
+  var acqGap  = OWNED_RESOURCES - (acqITBI + acqCart + reforma + mobilia);
+
+  setText('acq-lbl-propval', fmtK(propVal));
+  setText('acq-lbl-itbi', pct(itbi)); el('acq-lbl-itbi-pct').textContent = 'ITBI — ' + pct(itbi);
+  setText('acq-lbl-cart', pct(cart)); el('acq-lbl-cart-pct').textContent = 'Cartório+Reg — ' + pct(cart);
+  setText('acq-lbl-reforma', reforma > 0 ? fmtK(reforma) : 'R$0');
+  setText('acq-lbl-mobilia', mobilia > 0 ? fmtK(mobilia) : 'R$0');
+
+  var bd = IS_DARK?'#1e2d3d':'#e2e8f0', bbg = IS_DARK?'#0b1626':'#eff6ff';
+  var dim = IS_DARK?'#374151':'#cbd5e1', str = IS_DARK?'#f8fafc':'#0f172a', mut = IS_DARK?'#94a3b8':'#475569';
+  var rows = [
+    {l:'Valor do imóvel',               v:propVal,  c:str,                    b:false},
+    {l:'ITBI ('+pct(itbi)+')',          v:acqITBI,  c:'#f97316',              b:false},
+    {l:'Cartório+Reg. ('+pct(cart)+')', v:acqCart,  c:'#f97316',              b:false},
+    {l:'Reforma',                       v:reforma,  c:reforma  >0?'#f59e0b':dim, b:false},
+    {l:'Mobília / decoração',           v:mobilia,  c:mobilia  >0?'#f59e0b':dim, b:false},
+    {l:'TOTAL NECESSÁRIO',              v:acqTotal, c:'var(--success)',        b:true},
+  ];
+  el('acq-detail').innerHTML = '<div class="acq-hdr">Detalhamento</div>' +
+    rows.map(function(r, i) {
+      return '<div class="acq-row" style="background:' + (r.b?bbg:'transparent') + ';border-bottom:' + (i<5?'1px solid '+bd:'none') + '"><span style="font-size:' + (r.b?11:10) + 'px;color:' + (r.b?str:mut) + ';font-weight:' + (r.b?700:400) + '">' + r.l + '</span><span style="font-size:' + (r.b?15:11) + 'px;color:' + r.c + ';font-weight:' + (r.b?800:500) + '">' + fmt(r.v) + '</span></div>';
+    }).join('');
+
+  var ghx = acqGap >= 0 ? (IS_DARK?'#4ade80':'#16a34a') : '#ef4444';
+  el('acq-summary').innerHTML = '<div style="font-size:9px;color:var(--textDim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">Resumo de caixa</div>' +
+    [['Entrada disponível', fmt(OWNED_RESOURCES), '#4ade80'], ['ITBI + cartório', fmt(acqITBI+acqCart), '#f97316'],
+     ['Reforma + mobília', fmt(reforma+mobilia), '#f59e0b'], ['Gap / sobra', fmt(acqGap), ghx]].map(function(r) {
+      return '<div class="res-row"><span>' + r[0] + '</span><span style="color:' + r[2] + ';font-weight:' + (r[0]==='Gap / sobra'?700:400) + '">' + r[1] + '</span></div>';
+    }).join('') +
+    '<div style="margin-top:8px;padding:8px 10px;background:' + ghx + '22;border:1px solid ' + ghx + '44;border-radius:6px;font-size:9px;color:' + ghx + ';line-height:1.5">' +
+    (acqGap >= 0 ? '✓ Entrada cobre todos os custos de aquisição.' : '⚠️ Entrada insuficiente — considere reservar parte do LFTB11.') + '</div>';
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  ['sim','rev','acq'].forEach(function(t) { el('tab-' + t).style.display = t === tab ? 'block' : 'none'; });
+  document.querySelectorAll('.tab').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  if (tab === 'acq') updAcq();
+}
+function setSys(s)    { SYS = s; styleSysBtn('btn-sac','btn-price',s); upd(); }
+function setRevSys(s) { REV_SYS = s; updRev(); }
+function toggleFgts() {
+  USE_FGTS = !USE_FGTS;
+  var btn = el('btn-fgts-toggle'), hx = IS_DARK?'#fbbf24':'#ca8a04';
+  btn.textContent = USE_FGTS ? '✓ ATIVO' : 'DESATIVADO';
+  btn.style.background  = USE_FGTS ? hx : 'transparent';
+  btn.style.color       = USE_FGTS ? (IS_DARK?'#080c10':'#fff') : 'var(--textDim)';
+  btn.style.borderColor = USE_FGTS ? hx : 'var(--border)';
+  upd();
+}
+function toggleSec(secId, arrowId) {
+  var sec = el(secId), open = sec.style.display !== 'none';
+  sec.style.display = open ? 'none' : 'block'; el(arrowId).textContent = open ? '▼' : '▲';
+}
+function toggleTheme() {
+  IS_DARK = !IS_DARK; document.body.className = IS_DARK ? 'dark' : 'light'; el('btn-theme').textContent = IS_DARK ? '☀️' : '🌙';
+  styleSysBtn('btn-sac','btn-price',SYS); styleSysBtn('rev-btn-sac','rev-btn-price',REV_SYS);
+  upd(); updAcq();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.addEventListener('resize', function() { upd(); });
+styleSysBtn('btn-sac','btn-price',SYS); styleSysBtn('rev-btn-sac','rev-btn-price',REV_SYS);
+upd(); updAcq();
+</script>
+</body>
+</html>
